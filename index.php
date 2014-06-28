@@ -1,34 +1,45 @@
 <?php
-include_once('../inc/functions.php');
+include_once('inc/functions.php');
 
+$msg="";
+$form=getTemplate('form');
 $formData=getData();
+$message = getTemplate('message');
 
 if(ifFormSubmitted()){
     $rezult=validateForm($formData);
-    if($rezult===true){
+
+    if($rezult==true){
         writeDataToFile($formData);
+        header('Location: '.$_SERVER['REQUEST_URI']);
     }
     else {
-        echo(implode(",", validateForm($formData)));;
+        $form = processTemplateErrorOutput($form, $rezult);
     }
 }
 
-$captcha=genCaptcha();
-$form=<<<EOD
-    <div id="form">
-        <form method="post" enctype="multipart/form-data>
-            <input class="input" type="text" name="name" placeholder="Ваше имя"><br>
-            <input class="input" type="email" name="email" placeholder="Ваше имя"><br>
-            <textarea class="textarea" name="text" placeholder="Введите сообщение"></textarea><br>
-            $captcha[0];
-            <input class="input" name="captcha" placeholder="Введите ответ" required><br>
-            <input type="hidden" name="max_file_size" value="51200">
-            <input type="file" name="myfile">
-            <input class="input" name='submit' type="submit" value="Отправить"><br>
-        </form>
-    </div>
-EOD;
-echo $form;
+$data=getMessageFromData();
+$numStr=countData($data);
+$pageNum=isset($_GET['page']) ? (int)$_GET['page']: 1;
+$pageSize=isset($_GET['pageSize']) ? (int)$_GET['pageSize']: 10;
+$pageCount=countPages($numStr,$pageSize);
+$pageContent=getNumPage($data, $pageNum, $pageSize);
+
+
+
+$form=processTemplace($form, $formData);
+$page=processTemplace(getTemplate('page'), array(
+    'FORM'=>$form,
+    'captcha'=>genCaptcha(),
+    'MSG'=>$msg,
+    'PAGINATOR' => getPaginator($pageCount),
+    'MESSAGE' => pageText ($pageContent)
+
+));
+
+echo $page;
+
+
 
 
 
